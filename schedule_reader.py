@@ -14,6 +14,7 @@ def convert_xls_to_xlsx_with_colors(input_file):
         print(f"❌ Error: File '{input_file}' not found.")
         return None
 
+    # If it's already .xlsx, return it (don't convert)
     if input_file.endswith('.xlsx'):
         return input_file
 
@@ -53,6 +54,8 @@ def convert_xls_to_xlsx_with_colors(input_file):
                 if color_tuple:
                     # Convert to Hex
                     hex_color = "{:02x}{:02x}{:02x}".format(*color_tuple).upper()
+                    
+                    # Ignore default white/black to keep file clean
                     if hex_color not in ['FFFFFF', '000000']:
                          fill = PatternFill(start_color=hex_color, end_color=hex_color, fill_type='solid')
                          w_cell.fill = fill
@@ -66,14 +69,14 @@ def convert_xls_to_xlsx_with_colors(input_file):
 
 # ==========================================
 # FUNCTION 2: PARSER (P)
-# Reads the schedule, finds time slots, and adds Dates
+# Reads the schedule, fixes dates, and finds shifts
 # ==========================================
 def analyze_schedule(file_path, target_name):
     if not file_path or not os.path.exists(file_path):
         print("❌ Error: Invalid file path for analysis.")
         return
 
-    print(f"🔍 Scanning Schedule for: {target_name}...")
+    print(f"🔍 Scanning Schedule for: {target_name}...\n")
     
     try:
         wb = openpyxl.load_workbook(file_path)
@@ -83,15 +86,15 @@ def analyze_schedule(file_path, target_name):
         return
 
     current_header_map = {} 
-    current_day_str = ""     # Stores "Monday, Nov 24"
+    current_day_str = ""     
     found_any_shift = False
 
-    # Helper to convert Excel Serial Date to String
+    # --- Helper: Convert Excel "45985" to "Monday, Nov 24, 2025" ---
     def excel_date_to_string(serial):
         try:
-            # Excel base date is usually Dec 30, 1899
             serial = float(serial)
-            if serial > 40000: # Simple check if it looks like a modern date
+            # Excel base date is Dec 30, 1899
+            if serial > 40000: 
                 dt = datetime(1899, 12, 30) + timedelta(days=serial)
                 return dt.strftime("%A, %B %d, %Y")
             return None
@@ -102,18 +105,17 @@ def analyze_schedule(file_path, target_name):
         first_cell_val = str(row[0].value).strip() if row[0].value else ""
         row_values = [str(c.value).strip() if c.value else "" for c in row]
 
-        # --- 1. Detect Header (Time Slots) ---
-        # We look for the row containing "10-11"
+        # --- 1. Detect Header Row (Look for time slots) ---
         if "10-11" in row_values:
             current_header_map = {}
             
-            # A) Check if the first cell is a Date Serial (e.g., 45985.0)
+            # A) Check if the first cell is a Date Serial (e.g. 45985.0)
             date_from_serial = excel_date_to_string(first_cell_val)
             
             if date_from_serial:
                 current_day_str = date_from_serial
             else:
-                # B) Fallback: Check if Day Name is at the end (e.g. "MON")
+                # B) Fallback: Check end of row for "MON", "TUE"
                 possible_day = row_values[-1] if len(row_values[-1]) > 1 else "Unknown Date"
                 current_day_str = possible_day
 
@@ -131,10 +133,10 @@ def analyze_schedule(file_path, target_name):
             
             for cell in row:
                 if cell.column in current_header_map:
+                    # Check Color
                     fill = cell.fill
                     is_colored = False
                     
-                    # Color Detection Logic
                     if fill.patternType == 'solid':
                         if fill.start_color.type == 'rgb':
                              if fill.start_color.rgb not in ['00000000', 'FFFFFFFF', None]:
@@ -166,27 +168,51 @@ def analyze_schedule(file_path, target_name):
                 final_start = fmt_time(start_time_raw)
                 final_end = fmt_time(end_time_raw)
 
-                print(f"🗓️  Event: Work Shift")
-                print(f"    Date:  {current_day_str}")
-                print(f"    Time:  {final_start} to {final_end}")
-                # This string is optimized for Siri/Apple/Google Calendar copy-paste
-                print(f"    Add:   \"Work Shift on {current_day_str} from {final_start} to {final_end}\"")
-                print("   " + "-" * 40)
+                # --- OUTPUT FOR APPLE INTELLIGENCE ---
+                print(f"🗓️  {current_day_str}")
+                print(f"    Time: {final_start} to {final_end}")
+                # This exact phrase is highly recognizable by Siri/Calendar
+                print(f"    Add:  \"Work at Pizza Hut on {current_day_str} from {final_start} to {final_end}\"")
+                print("    " + "-" * 45)
     
     if not found_any_shift:
-        print(f"\n❌ No colored shifts found for {target_name}.")
+        print(f"❌ No colored shifts found for {target_name}.")
 
 # ==========================================
 # MAIN EXECUTION
 # ==========================================
 if __name__ == "__main__":
-    # 1. SETTINGS
-    my_file = "Main Schedule  From November 24 to November 30.xls" 
+    # --- CONFIGURATION ---
+    my_file = "Main Schedule  From November 17 to November 23.xls" 
     my_name = "Farid"
-    
-    # 2. RUN CONVERSION
-    converted_file = convert_xls_to_xlsx_with_colors(my_file)
+    converted_file = None
 
-    # 3. RUN ANALYSIS
-    if converted_file:
-        analyze_schedule(converted_file, my_name)
+    try:
+        # 1. Run Conversion
+        converted_file = convert_xls_to_xlsx_with_colors(my_file)
+
+        # 2. Run Analysis
+        if converted_file:
+            analyze_schedule(converted_file, my_name)
+
+    finally:
+        # 3. CLEANUP (Delete both files)
+        print("\n🧹 Cleaning up files...")
+        
+        # Delete the temporary XLSX
+        if converted_file and os.path.exists(converted_file):
+            try:
+                os.remove(converted_file)
+                print(f"   - Deleted temporary file: {converted_file}")
+            except Exception as e:
+                print(f"   - Could not delete {converted_file}: {e}")
+
+        # Delete the original XLS (As requested)
+        if os.path.exists(my_file):
+            try:
+                os.remove(my_file)
+                print(f"   - Deleted original file: {my_file}")
+            except Exception as e:
+                print(f"   - Could not delete {my_file}: {e}")
+        
+        print("✨ Done.")
