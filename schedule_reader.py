@@ -88,6 +88,11 @@ def analyze_schedule(file_path, target_name):
     current_header_map = {} 
     current_day_str = ""     
     found_any_shift = False
+    # WEEKLY TOTALS
+    weekly_hours = 0
+    weekly_gross = 0.0
+    weekly_net = 0.0
+
 
     # --- Helper: Convert Excel "45985" to "Monday, Nov 24, 2025" ---
     def excel_date_to_string(serial):
@@ -173,10 +178,36 @@ def analyze_schedule(file_path, target_name):
                 print(f"    Time: {final_start} to {final_end}")
                 # This exact phrase is highly recognizable by Siri/Calendar
                 print(f"    Add:  \"Work at Pizza Hut on {current_day_str} from {final_start} to {final_end}\"")
+                # --- 4. Estimate Pay Calculation ---
+                start_hour = int(start_time_raw)
+                end_hour = int(end_time_raw)
+                hours_worked = end_hour - start_hour
+
+                hourly_rate = 17.5
+                gross_pay = hours_worked * hourly_rate
+                net_pay = gross_pay * 0.70  # After 30% tax
+
+                # Add to weekly totals
+                weekly_hours += hours_worked
+                weekly_gross += gross_pay
+                weekly_net += net_pay
+
+                print(f"    Hours Worked: {hours_worked} hours")
+                print(f"    Gross Pay: ${gross_pay:.2f}")
+                print(f"    Net Pay (after 30% tax): ${net_pay:.2f}")
                 print("    " + "-" * 45)
+
     
     if not found_any_shift:
         print(f"❌ No colored shifts found for {target_name}.")
+    else:
+        # --- WEEKLY TOTAL OUTPUT ---
+        print("\n📊 WEEKLY TOTALS")
+        print(f"    Total Hours: {weekly_hours} hours")
+        print(f"    Total Gross Pay: ${weekly_gross:.2f}")
+        print(f"    Total Net Pay (after 30% tax): ${weekly_net:.2f}")
+        print("    " + "=" * 45 + "\n")
+
 
 # ==========================================
 # MAIN EXECUTION
