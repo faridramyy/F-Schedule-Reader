@@ -174,7 +174,7 @@ def analyze_schedule(file_path, target_name):
                 final_end = fmt_time(end_time_raw)
 
                 # --- OUTPUT FOR APPLE INTELLIGENCE ---
-                print(f"{current_day_str} from {final_start} to {final_end} for Pizza Hut.")
+                print(f"Pizza Hut shift on {current_day_str} at {final_start} to {final_end}\n")
                 # --- 4. Estimate Pay Calculation ---
                 start_hour = int(start_time_raw)
                 end_hour = int(end_time_raw)
@@ -205,7 +205,7 @@ def analyze_schedule(file_path, target_name):
 # ==========================================
 if __name__ == "__main__":
     # --- CONFIGURATION ---
-    my_file = "Main Schedule  From November 17 to November 23.xls" 
+    my_file = "Main Schedule  From November 24 to November 30.xls" 
     my_name = "Farid"
     converted_file = None
 
@@ -230,11 +230,11 @@ if __name__ == "__main__":
                 print(f"   - Could not delete {converted_file}: {e}")
 
         # Delete the original XLS (As requested)
-        if os.path.exists(my_file):
-            try:
-                os.remove(my_file)
-                print(f"   - Deleted original file: {my_file}")
-            except Exception as e:
-                print(f"   - Could not delete {my_file}: {e}")
+        # if os.path.exists(my_file):
+        #     try:
+        #         os.remove(my_file)
+        #         print(f"   - Deleted original file: {my_file}")
+        #     except Exception as e:
+        #         print(f"   - Could not delete {my_file}: {e}")
         
         print("✨ Done.")
