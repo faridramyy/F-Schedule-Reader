@@ -174,10 +174,7 @@ def analyze_schedule(file_path, target_name):
                 final_end = fmt_time(end_time_raw)
 
                 # --- OUTPUT FOR APPLE INTELLIGENCE ---
-                print(f"🗓️  {current_day_str}")
-                print(f"    Time: {final_start} to {final_end}")
-                # This exact phrase is highly recognizable by Siri/Calendar
-                print(f"    Add:  \"Work at Pizza Hut on {current_day_str} from {final_start} to {final_end}\"")
+                print(f"{current_day_str} from {final_start} to {final_end} for Pizza Hut.")
                 # --- 4. Estimate Pay Calculation ---
                 start_hour = int(start_time_raw)
                 end_hour = int(end_time_raw)
@@ -191,12 +188,6 @@ def analyze_schedule(file_path, target_name):
                 weekly_hours += hours_worked
                 weekly_gross += gross_pay
                 weekly_net += net_pay
-
-                print(f"    Hours Worked: {hours_worked} hours")
-                print(f"    Gross Pay: ${gross_pay:.2f}")
-                print(f"    Net Pay (after 30% tax): ${net_pay:.2f}")
-                print("    " + "-" * 45)
-
     
     if not found_any_shift:
         print(f"❌ No colored shifts found for {target_name}.")
