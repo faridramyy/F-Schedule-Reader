@@ -1,13 +1,17 @@
-import os
+import dotenv
+from config import TARGET_NAME , HOURLY_RATE, TAX_RATE
 from converter import convert_xls_to_xlsx_with_colors
 from parser import analyze_schedule
-from config import FILE_NAME, TARGET_NAME, HOURLY_RATE, TAX_RATE
-
+from telegram_downloader import wait_for_xls
+import os
 
 def main():
-    print("\n=== PIZZA HUT SCHEDULE PARSER ===\n")
+    dotenv.load_dotenv()   
+    BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-    converted = convert_xls_to_xlsx_with_colors(FILE_NAME)
+    print("\n=== TELEGRAM XLS DOWNLOADER ===\n")
+    xls_path = wait_for_xls(BOT_TOKEN)
+    converted = convert_xls_to_xlsx_with_colors(xls_path)
 
     if converted:
         analyze_schedule(
@@ -26,9 +30,16 @@ def main():
             print(f"Deleted: {converted}")
         except:
             print(f"Could not delete: {converted}")
+    if xls_path and os.path.exists(xls_path):
+        try:
+            os.remove(xls_path)
+            print(f"Deleted: {xls_path}")
+        except:
+            print(f"Could not delete: {xls_path}")
 
     print("\n✨ Done.\n")
 
 
 if __name__ == "__main__":
-    main()
+    while True:
+        main()
